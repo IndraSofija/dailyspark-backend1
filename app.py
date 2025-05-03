@@ -12,13 +12,11 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Iestatīt OpenAI API atslēgu
+# Pievieno API atslēgu no vides mainīgajiem
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Inicializēt FastAPI aplikāciju
 app = FastAPI()
 
-# CORS middleware atļauj visiem domēniem piekļuvi
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
