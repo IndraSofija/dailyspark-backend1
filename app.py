@@ -1,10 +1,11 @@
 from flask import Flask, request, jsonify
-from openai import OpenAI
+import openai
 import os
 
 app = Flask(__name__)
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Ielādē OpenAI API atslēgu no vides mainīgā
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 @app.route("/", methods=["GET"])
 def home():
@@ -12,25 +13,28 @@ def home():
 
 @app.route("/generate", methods=["POST"])
 def generate():
-    data = request.get_json()
-    category = data.get("category")
-    prompt = data.get("prompt")
-
-    if not prompt:
-        return jsonify({"error": "No prompt provided."}), 400
-
     try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": f"You are an assistant helping generate inspirational ideas for the '{category}' category."},
-                {"role": "user", "content": prompt}
-            ]
+        data = request.get_json()
+
+        if not data or "prompt" not in data:
+            return jsonify({"error": "Missing 'prompt' in request body."}), 400
+
+        prompt = data["prompt"]
+
+        # Iegūst rezultātu no OpenAI
+        response = openai.Completion.create(
+            model="text-davinci-003",
+            prompt=prompt,
+            max_tokens=100
         )
-        answer = response.choices[0].message.content.strip()
-        return jsonify({"response": answer})
+
+        generated_text = response.choices[0].text.strip()
+        return jsonify({"result": generated_text})
+
+    except openai.error.OpenAIError as e:
+        return jsonify({"error": f"OpenAI API error: {str(e)}"}), 500
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)
+    app.run(debug=True)
