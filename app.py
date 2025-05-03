@@ -1,11 +1,11 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import os
-import openai
+from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 app = FastAPI()
 
@@ -25,16 +25,16 @@ async def root():
 async def generate_text(request: Request):
     body = await request.json()
     prompt = body.get("prompt")
-    
+
     if not prompt:
         return {"error": "No prompt provided."}
 
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}]
         )
-        generated_text = response.choices[0].message["content"]
+        generated_text = response.choices[0].message.content
         return {"result": generated_text}
     except Exception as e:
         return {"error": str(e)}
