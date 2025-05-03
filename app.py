@@ -4,8 +4,12 @@ import os
 
 app = Flask(__name__)
 
-# API key from environment
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai_api_key = os.getenv("OPENAI_API_KEY")
+
+if not openai_api_key:
+    raise ValueError("OPENAI_API_KEY is not set in environment variables.")
+
+openai.api_key = openai_api_key
 
 @app.route("/", methods=["GET"])
 def home():
@@ -17,12 +21,12 @@ def generate():
         data = request.get_json()
         prompt = data.get("prompt", "")
         if not prompt:
-            return jsonify({"error": "No prompt provided."}), 400
+            return jsonify({"error": "Prompt is required."}), 400
 
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=150,
+            max_tokens=100,
             temperature=0.7
         )
 
