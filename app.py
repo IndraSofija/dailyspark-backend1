@@ -8,15 +8,17 @@ import logging
 # Ielādē .env failu (Railway vidē tas ir optional, bet lokālai testēšanai noder)
 load_dotenv()
 
-# Iestata žurnālošanu
+# Iestatit žurnālošanu
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Iestata OpenAI API atslēgu
+# Iestatīt OpenAI API atslēgu
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+# Inicializēt FastAPI aplikāciju
 app = FastAPI()
 
+# CORS middleware atļauj visiem domēniem piekļuvi
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
