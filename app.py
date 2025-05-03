@@ -1,22 +1,24 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-import os
-import openai
+from openai import OpenAI
 from dotenv import load_dotenv
+import os
 import logging
 
 # Ielādē .env failu (Railway vidē tas ir optional, bet lokālai testēšanai noder)
 load_dotenv()
 
-# Iestatit žurnālošanu
+# Iestata žurnālošanu
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Izveidot OpenAI klientu (automātiski izmanto vidi, ja OPENAI_API_KEY ir iestatīts)
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Inicializē OpenAI klientu
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+# Inicializē FastAPI
 app = FastAPI()
 
+# Atļauj CORS no jebkuras izcelsmes (attīstības posmā noderīgi)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -25,17 +27,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Saknes maršruts - pārbaudei
 @app.get("/")
 async def root():
     return {"message": "DailySpark backend is running."}
 
+# Ģenerēšanas API maršruts
 @app.post("/generate")
 async def generate_content(request: Request):
     data = await request.json()
     prompt = data.get("prompt", "")
 
     try:
-        response = openai.chat.completions.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "user", "content": prompt}
