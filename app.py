@@ -4,16 +4,26 @@ import os
 from openai import OpenAI
 from dotenv import load_dotenv
 import logging
+import httpx
 
 # Iestatīt žurnalēšanu
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
-# Izveidot OpenAI klientu
+# Izveidot OpenAI klientu ar palielinātu taimautu
 api_key = os.getenv("OPENAI_API_KEY")
 logger.info(f"API key is {'set' if api_key else 'not set'}")
-client = OpenAI(api_key=api_key)
+
+# Izveidot HTTP klientu ar palielinātu taimautu
+http_client = httpx.Client(timeout=60.0)
+
+# Izveidot OpenAI klientu ar pielāgotu HTTP klientu
+client = OpenAI(
+    api_key=api_key,
+    http_client=http_client,
+    timeout=60.0  # 60 sekundes taimauts
+)
 
 app = FastAPI()
 
@@ -39,10 +49,25 @@ async def generate_text(request: Request):
 
     try:
         logger.info(f"Sending request to OpenAI with prompt: {prompt[:50]}...")
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}]
-        )
+
+        # Mēģinām ar citu modeli, ja gpt-3.5-turbo nedarbojas
+        try:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}],
+                timeout=60  # 60 sekundes taimauts
+            )
+        except Exception as model_error:
+            logger.warning(f"Error with gpt-3.5-turbo: {str(model_error)}. Trying text-davinci-003...")
+            response = client.completions.create(
+                model="text-davinci-003",
+                prompt=prompt,
+                max_tokens=500,
+                timeout=60
+            )
+            generated_text = response.choices[0].text.strip()
+            return {"result": generated_text}
+
         generated_text = response.choices[0].message.content
         logger.info("Successfully received response from OpenAI")
         return {"result": generated_text}
