@@ -44,4 +44,5 @@ async def generate_content(request: Request):
         result = response.choices[0].message.content.strip()
         return {"result": result}
     except Exception as e:
-        logger.error(f"Kļūda ģenerēšanā:
+      logger.error(f"Kļūda ģenerēšanā: {e}")
+
