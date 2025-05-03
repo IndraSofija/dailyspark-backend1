@@ -1,38 +1,45 @@
-from flask import Flask, request, jsonify
-import openai
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 import os
+import openai
+from dotenv import load_dotenv
 
-app = Flask(__name__)
+load_dotenv()
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-openai_api_key = os.getenv("OPENAI_API_KEY")
-if not openai_api_key:
-    raise EnvironmentError("OPENAI_API_KEY is not set.")
+app = FastAPI()
 
-openai.api_key = openai_api_key
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.route("/", methods=["GET"])
-def health_check():
-    return jsonify({"status": "ok", "message": "Backend is running"}), 200
+@app.get("/")
+async def root():
+    return {"message": "DailySpark backend is running."}
 
-@app.route("/generate", methods=["POST"])
-def generate_response():
+@app.post("/generate")
+async def generate_text(request: Request):
+    body = await request.json()
+    prompt = body.get("prompt")
+    
+    if not prompt:
+        return {"error": "No prompt provided."}
+
     try:
-        data = request.get_json()
-        prompt = data.get("prompt", "")
-        if not prompt:
-            return jsonify({"error": "Prompt is required"}), 400
-
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=100,
-            temperature=0.7
+            messages=[{"role": "user", "content": prompt}]
         )
-        reply = response.choices[0].message.content.strip()
-        return jsonify({"response": reply}), 200
-
+        generated_text = response.choices[0].message["content"]
+        return {"result": generated_text}
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return {"error": str(e)}
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("app:app", host="0.0.0.0", port=port)
