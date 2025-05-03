@@ -1,22 +1,23 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-import os
-from openai import OpenAI
 from dotenv import load_dotenv
+import os
+import openai
 import logging
 
-# Iestatīt žurnalēšanu
+# Ielādē .env
+load_dotenv()
+api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = api_key
+
+# Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-load_dotenv()
-# Izveidot OpenAI klientu
-api_key = os.getenv("OPENAI_API_KEY")
 logger.info(f"API key is {'set' if api_key else 'not set'}")
-client = OpenAI(api_key=api_key)
+logger.info(f"Using openai version: {openai.__version__}")
 
+# FastAPI setup
 app = FastAPI()
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -39,17 +40,16 @@ async def generate_text(request: Request):
 
     try:
         logger.info(f"Sending request to OpenAI with prompt: {prompt[:50]}...")
-        response = client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}]
         )
-        generated_text = response.choices[0].message.content
+        generated_text = response.choices[0].message["content"]
         logger.info("Successfully received response from OpenAI")
         return {"result": generated_text}
     except Exception as e:
-        error_msg = str(e)
-        logger.error(f"OpenAI API Error: {error_msg}")
-        return {"error": f"Connection error: {error_msg}"}
+        logger.error(f"OpenAI API Error: {str(e)}")
+        return {"error": f"Connection error: {str(e)}"}
 
 if __name__ == "__main__":
     import uvicorn
