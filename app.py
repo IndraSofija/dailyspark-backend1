@@ -35,7 +35,7 @@ async def generate_content(request: Request):
     prompt = data.get("prompt", "")
 
     try:
-        response = openai.ChatCompletion.create(
+        response = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "user", "content": prompt}
@@ -44,5 +44,4 @@ async def generate_content(request: Request):
         result = response.choices[0].message.content.strip()
         return {"result": result}
     except Exception as e:
-        logger.error(f"Kļūda ģenerēšanā: {e}")
-        return {"error": str(e)}
+        logger.error(f"Kļūda ģenerēšanā:
