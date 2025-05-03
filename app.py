@@ -5,19 +5,22 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import logging
 
-# Iestatīt žurnalēšanu
+# Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Load API key
 load_dotenv()
-# Izveidot OpenAI klientu
 api_key = os.getenv("OPENAI_API_KEY")
 logger.info(f"API key is {'set' if api_key else 'not set'}")
-client = OpenAI(api_key=api_key)
- # ← JAUNĀ SDK automātiski izmanto vidi, ja OPENAI_API_KEY ir .env
 
+# Create OpenAI client (correct for SDK 1.3.5)
+client = OpenAI(api_key=api_key)
+
+# Initialize FastAPI
 app = FastAPI()
 
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
