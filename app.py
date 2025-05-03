@@ -4,6 +4,7 @@ import os
 
 app = Flask(__name__)
 
+# API key from environment
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 @app.route("/", methods=["GET"])
@@ -14,26 +15,22 @@ def home():
 def generate():
     try:
         data = request.get_json()
-        prompt = data.get("prompt")
-
+        prompt = data.get("prompt", "")
         if not prompt:
-            return jsonify({"error": "Prompt is required."}), 400
+            return jsonify({"error": "No prompt provided."}), 400
 
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": prompt}
-            ]
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=150,
+            temperature=0.7
         )
 
-        return jsonify({
-            "response": response['choices'][0]['message']['content']
-        })
+        reply = response.choices[0].message.content.strip()
+        return jsonify({"response": reply})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
