@@ -37,7 +37,8 @@ async def generate_text(request: Request):
         generated_text = response.choices[0].message.content
         return {"result": generated_text}
     except Exception as e:
-        return {"error": str(e)}
+        print(f"OpenAI API Error: {str(e)}")  # This will show in your Railway logs
+        return {"error": f"Connection error: {str(e)}"}
 
 if __name__ == "__main__":
     import uvicorn
