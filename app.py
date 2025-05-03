@@ -4,7 +4,6 @@ import os
 
 app = Flask(__name__)
 
-# OpenAI atslēga no Railway vides mainīgā
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 @app.route("/", methods=["GET"])
