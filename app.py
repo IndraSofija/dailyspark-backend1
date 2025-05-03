@@ -4,21 +4,18 @@ import os
 
 app = Flask(__name__)
 
-# Pārbauda, vai vide mainīgais eksistē
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if not openai_api_key:
     raise EnvironmentError("OPENAI_API_KEY is not set.")
 
 openai.api_key = openai_api_key
 
-# Health check maršruts Railway sistēmai
 @app.route("/", methods=["GET"])
-def home():
-    return jsonify({"status": "ok", "message": "DailySpark backend is running."}), 200
+def health_check():
+    return jsonify({"status": "ok", "message": "Backend is running"}), 200
 
-# Galvenais /generate maršruts
 @app.route("/generate", methods=["POST"])
-def generate():
+def generate_response():
     try:
         data = request.get_json()
         prompt = data.get("prompt", "")
@@ -37,6 +34,5 @@ def generate():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Servera iedarbināšana uz vajadzīgā porta
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
