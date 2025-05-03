@@ -3,9 +3,17 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
+import logging
+
+# Iestatīt žurnalēšanu
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Izveidot OpenAI klientu
+api_key = os.getenv("OPENAI_API_KEY")
+logger.info(f"API key is {'set' if api_key else 'not set'}")
+client = OpenAI(api_key=api_key)
 
 app = FastAPI()
 
@@ -30,17 +38,21 @@ async def generate_text(request: Request):
         return {"error": "No prompt provided."}
 
     try:
+        logger.info(f"Sending request to OpenAI with prompt: {prompt[:50]}...")
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}]
         )
         generated_text = response.choices[0].message.content
+        logger.info("Successfully received response from OpenAI")
         return {"result": generated_text}
     except Exception as e:
-        print(f"OpenAI API Error: {str(e)}")  # This will show in your Railway logs
-        return {"error": f"Connection error: {str(e)}"}
+        error_msg = str(e)
+        logger.error(f"OpenAI API Error: {error_msg}")
+        return {"error": f"Connection error: {error_msg}"}
 
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
+    logger.info(f"Starting server on port {port}")
     uvicorn.run("app:app", host="0.0.0.0", port=port)
