@@ -4,31 +4,26 @@ import os
 
 app = Flask(__name__)
 
-# 🔍 Diagnostikas rindiņa
-print("🔐 OPENAI_API_KEY =", os.getenv("OPENAI_API_KEY"))
-
-# Atslēgas ielāde un aizsardzība
+# Pārbauda, vai vide mainīgais eksistē
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if not openai_api_key:
-    print("❌ ERROR: OPENAI_API_KEY is missing.")
-    openai_api_key = None  # ļaus sistēmai turpināt, bet atteiks pieprasījumu
+    raise EnvironmentError("OPENAI_API_KEY is not set.")
 
 openai.api_key = openai_api_key
 
+# Health check maršruts Railway sistēmai
 @app.route("/", methods=["GET"])
 def home():
-    return jsonify({"message": "✅ DailySpark backend is running."})
+    return jsonify({"status": "ok", "message": "DailySpark backend is running."}), 200
 
+# Galvenais /generate maršruts
 @app.route("/generate", methods=["POST"])
 def generate():
-    if not openai.api_key:
-        return jsonify({"error": "API key is missing"}), 403
-
     try:
         data = request.get_json()
         prompt = data.get("prompt", "")
         if not prompt:
-            return jsonify({"error": "Prompt is required."}), 400
+            return jsonify({"error": "Prompt is required"}), 400
 
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -37,11 +32,11 @@ def generate():
             temperature=0.7
         )
         reply = response.choices[0].message.content.strip()
-        return jsonify({"response": reply})
+        return jsonify({"response": reply}), 200
 
     except Exception as e:
-        print("🔥 Error during generation:", str(e))
         return jsonify({"error": str(e)}), 500
 
+# Servera iedarbināšana uz vajadzīgā porta
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
