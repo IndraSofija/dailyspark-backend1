@@ -8,11 +8,11 @@ import logging
 # Ielādē .env failu (Railway vidē tas ir optional, bet lokālai testēšanai noder)
 load_dotenv()
 
-# Iestata žurnālošanu
+# Iestatit žurnālošanu
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Iestata OpenAI API atslēgu
+# Izveidot OpenAI klientu (automātiski izmanto vidi, ja OPENAI_API_KEY ir iestatīts)
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = FastAPI()
@@ -44,5 +44,5 @@ async def generate_content(request: Request):
         result = response.choices[0].message.content.strip()
         return {"result": result}
     except Exception as e:
-      logger.error(f"Kļūda ģenerēšanā: {e}")
-
+        logger.error(f"Kļūda ģenerēšanā: {e}")
+        return {"error": str(e)}
