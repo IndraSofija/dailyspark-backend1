@@ -13,7 +13,7 @@ load_dotenv()
 # Izveidot OpenAI klientu
 api_key = os.getenv("OPENAI_API_KEY")
 logger.info(f"API key is {'set' if api_key else 'not set'}")
-client = OpenAI(api_key=api_key)
+client = OpenAI()  # ← JAUNĀ SDK automātiski izmanto vidi, ja OPENAI_API_KEY ir .env
 
 app = FastAPI()
 
@@ -47,8 +47,9 @@ async def generate_text(request: Request):
         logger.info("Successfully received response from OpenAI")
         return {"result": generated_text}
     except Exception as e:
-        logger.exception("OpenAI API Error")
-        return {"error": f"Connection error: {type(e).__name__}: {e}"}
+        error_msg = str(e)
+        logger.error(f"OpenAI API Error: {error_msg}")
+        return {"error": f"Connection error: {error_msg}"}
 
 if __name__ == "__main__":
     import uvicorn
