@@ -13,7 +13,8 @@ load_dotenv()
 # Izveidot OpenAI klientu
 api_key = os.getenv("OPENAI_API_KEY")
 logger.info(f"API key is {'set' if api_key else 'not set'}")
-client = OpenAI()  # ← JAUNĀ SDK automātiski izmanto vidi, ja OPENAI_API_KEY ir .env
+client = OpenAI(api_key=api_key)
+ # ← JAUNĀ SDK automātiski izmanto vidi, ja OPENAI_API_KEY ir .env
 
 app = FastAPI()
 
