@@ -1,1 +1,4 @@
-web: python app.py
+fastapi
+openai
+uvicorn[standard]
+python-dotenv
