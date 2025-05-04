@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request
+
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import openai
