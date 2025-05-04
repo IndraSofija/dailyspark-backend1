@@ -1,25 +1,18 @@
 from fastapi import FastAPI, Request
-
 from fastapi.middleware.cors import CORSMiddleware
-import os
-import openai
+from openai import OpenAI
 from dotenv import load_dotenv
+import os
 import logging
+import socket
 
-# Ielādē .env failu (Railway vidē tas ir optional, bet lokālai testēšanai noder)
+# Ielādē .env mainīgos
 load_dotenv()
 
-# Iestatīt žurnālošanu
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Pievieno API atslēgu no vides mainīgajiem
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
-# Inicializē FastAPI aplikāciju
+# Inicializē FastAPI
 app = FastAPI()
 
-# Pievieno CORS middleware
+# Atļaut visus CORS pieprasījumus (frontenda testēšanai)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,27 +21,53 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Saknes maršruts testēšanai
+# Logging iestatījumi
+logging.basicConfig(level=logging.INFO)
+
+# 🔐 Debug: pārbaudi, vai API_KEY vispār tiek saņemts
+api_key = os.getenv("OPENAI_API_KEY")
+print("🔐 API key (sākums):", api_key[:10] if api_key else "None")
+
+client = OpenAI()
+
 @app.get("/")
-async def root():
+def root():
     return {"message": "DailySpark backend is running."}
 
-# Ģenerēšanas maršruts
 @app.post("/generate")
-async def generate_content(request: Request):
-    data = await request.json()
-    prompt = data.get("prompt", "")
+async def generate_text(request: Request):
+    logging.info("🚀 API /generate saņemts!")
 
     try:
-        client = openai.OpenAI()
-        response = client.chat.completions.create(
+        body = await request.json()
+        prompt = body.get("prompt")
+
+        if not prompt:
+            return {"error": "Prompt is required."}
+
+        chat_completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "user", "content": prompt}
             ]
         )
-        result = response.choices[0].message.content.strip()
+
+        result = chat_completion.choices[0].message.content.strip()
         return {"result": result}
+
     except Exception as e:
-        logger.error(f"Kļūda ģenerēšanā: {e}")
+        logging.error(f"⚠️ Kļūda ģenerēšanas laikā: {e}")
         return {"error": str(e)}
+
+# ✅ Tīkla savienojuma pārbaude ar OpenAI API
+@app.get("/network-test")
+def network_test():
+    try:
+        host = "api.openai.com"
+        port = 443
+        ip = socket.gethostbyname(host)
+        s = socket.create_connection((ip, port), timeout=5)
+        s.close()
+        return {"status": "SUCCESS", "ip": ip}
+    except Exception as e:
+        return {"status": "FAIL", "error": str(e)}
